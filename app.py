@@ -80,7 +80,7 @@ def get_organization(reference):
 # CITIZEN
 
 
-@app.route('/citizens/me')
+@app.route('/citizens/me', cors=True)
 def me():
     return citizens_service.find(ME_CITIZEN)
 
