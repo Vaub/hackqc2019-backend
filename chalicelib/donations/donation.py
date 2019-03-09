@@ -1,7 +1,17 @@
 import datetime
 import uuid
+from functools import reduce
 
 import dateutil
+
+
+def calculate_donated(donations):
+    return reduce(lambda acc, donation: acc + donation.amount, donations, 0)
+
+
+def calculate_donators(donations):
+    donators = set([donation.from_citizen for donation in donations])
+    return len(donators)
 
 
 class Donation:
@@ -13,6 +23,7 @@ class Donation:
             from_citizen=json['from'],
             to_recipient=json['to'],
             amount=json['amount'],
+            position=json['position'],
             donated_at=datetime.datetime.now(),
         )
 
@@ -21,11 +32,12 @@ class Donation:
         json['donated_at'] = dateutil.parser.parse(json['donated_at'])
         return Donation(**json)
 
-    def __init__(self, reference, from_citizen, to_recipient, amount, donated_at):
+    def __init__(self, reference, from_citizen, to_recipient, amount, position, donated_at):
         self.reference = reference
         self.from_citizen = from_citizen
         self.to_recipient = to_recipient
         self.amount = amount
+        self.position = position
         self.donated_at = donated_at
 
     def is_valid(self):

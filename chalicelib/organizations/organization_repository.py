@@ -1,3 +1,6 @@
+import json
+from decimal import Decimal
+
 import boto3
 
 from chalicelib.organizations.organization import Organization
@@ -21,9 +24,11 @@ class OrganizationDynamoDBRepository:
         self._table = table
 
     def put(self, organization):
+        item = json.loads(json.dumps(organization.as_json()), parse_float=Decimal)
+
         self._table.put_item(Item={
             "organization": organization.reference,
-            **organization.as_json(),
+            **item,
         })
 
     def find(self, organization):

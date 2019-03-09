@@ -1,4 +1,8 @@
+import json
+from decimal import Decimal
+
 import boto3
+from boto3.dynamodb.conditions import Key
 
 from chalicelib.donations.donation import Donation
 
@@ -21,19 +25,34 @@ class DonationsDynamoDBRepository:
         self._table = table
 
     def put(self, donation):
+        item = json.loads(json.dumps(donation.as_json()), parse_float=Decimal)
+
         self._table.put_item(Item={
             "donation": donation.reference,
-            **donation.as_json(),
+            **item,
         })
+
+    def get_all(self):
+        items = self._table.scan()
+        items = items['Items']
+
+        return [_parse_item(item) for item in items]
 
     def find_by(self, citizen=None, recipient=None):
         if not citizen and not recipient:
             return None
 
-        item = None
+        query = None
         if citizen:
-            item = self._table.get_item(Key={"from_citizen": citizen})
+            query = self._table.query(
+                IndexName='from_citizen-donation-index',
+                KeyConditionExpression=Key('from_citizen').eq(citizen)
+            )
         if recipient:
-            item = self._table.get_item(Key={"to_recipient", recipient})
+            query = self._table.query(
+                IndexName='from_citizen-donation-index',
+                KeyConditionExpression=Key('to_recipient').eq(recipient)
+            )
 
-        return _parse_item(item['Item']) if 'Item' in item else None
+        items = query['Items']
+        return [_parse_item(item) for item in items]

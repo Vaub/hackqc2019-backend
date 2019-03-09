@@ -7,9 +7,13 @@ from chalicelib import (
     donations_service,
     organizations_service,
     recipients_service,
-)
+    statistics_service)
 
 app = Chalice(app_name='hackqc2019')
+
+ME_CITIZEN = 'C_12345'
+ME_ORGANIZATION = '42f6484d-2a42-4e71-bd08-de85be6357ac'
+ME_POSITION = {'lat': 46.816480, 'lon': -71.200458}
 
 
 @app.route('/', cors=True)
@@ -24,10 +28,6 @@ def find_recipient(reference):
     recipient = recipients_service.find_recipient(reference)
     if not recipient:
         raise NotFoundError()
-
-    uri_params = app.current_request.uri_params
-    if 'lon' in uri_params and 'lat' in uri_params:
-        print(f'location given ({uri_params.lon},{uri_params.lat})')
 
     return recipient
 
@@ -56,8 +56,15 @@ def register_organization():
 
 @app.route('/organizations/me', cors=True)
 def my_organization():
-    me = "12345"
-    return organizations_service.find_organization(me)
+    return organizations_service.find_organization(ME_ORGANIZATION)
+
+
+@app.route('/organizations/me/redeem', cors=True)
+def redeem():
+    request = app.current_request.json_body
+
+    request['to_organization'] = ME_ORGANIZATION
+    return citizens_in_needs_service.redeem(request)
 
 
 @app.route('/organizations/{reference}', cors=True)
@@ -67,40 +74,79 @@ def get_organization(reference):
     if not organization:
         raise NotFoundError()
 
-    return organization
+    return organization.as_json()
+
 
 # CITIZEN
 
 
 @app.route('/citizens/me')
 def me():
-    me_citizen = 'C_12345'
-    return citizens_service.find(me_citizen)
+    return citizens_service.find(ME_CITIZEN)
 
 
-@app.route('/donations', cors=True)
+@app.route('/citizens/me/donations', cors=True)
 def get_my_donations():
+    donations = donations_service.find_from_citizen(ME_CITIZEN)
+
     return {
-        "donations": []
+        "donations": [donation.as_json() for donation in donations]
     }
 
 
 @app.route('/citizens/me/donations', methods=['POST'], cors=True)
 def send_donation():
     donation_request = app.current_request.json_body
+
+    donation_request['from'] = ME_CITIZEN
+    if 'position' not in donation_request:
+        donation_request['position'] = ME_POSITION
+
     donation = donations_service.send_donation(donation_request)
-    return donation.as_json()
+
+    return {
+        "donation": donation['donation'].as_json(),
+        "recipient": {
+            "type": donation['recipient']['type'],
+            **donation['recipient']['entity'],
+        }
+    }
 
 
 # CITIZEN IN NEEDS
 
 @app.route('/citizens/in-needs/{reference}', cors=True)
 def get_citizen_in_needs(reference):
-    citizen_in_needs = citizens_in_needs_service.find(reference)
+    citizen_in_needs = citizens_in_needs_service.find_in_needs(reference)
     if not citizen_in_needs:
         raise NotFoundError()
 
     return citizen_in_needs
+
+
+# STATISTICS
+
+@app.route('/statistics', cors=True)
+def get_neighborhoods_statistics():
+    params = app.current_request.query_params
+    if params and 'neighborhood' in params:
+        statistics= statistics_service.find_neighborhood_stats(neighborhood=params['neighborhood'])
+        return _serialize_neighborhood_statistics(statistics)
+
+    statistics = statistics_service.find_neighborhoods_stats()
+    return [_serialize_neighborhood_statistics(s) for s in statistics]
+
+
+def _serialize_neighborhood_statistics(statistics):
+    if not statistics:
+        raise NotFoundError()
+
+    return {
+        "neighborhood": statistics['neighborhood'].name(),
+        "organizations": [o.as_json() for o in statistics['organizations']],
+        "donated": statistics['donated'],
+        "donators": statistics['donators'],
+    }
 
 
 @app.route('/doc', cors=True)
