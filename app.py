@@ -2,14 +2,15 @@ import boto3
 from chalice import Chalice, NotFoundError
 
 import chalicelib.recipients_tag_service as recipients_tag_service
-from chalicelib import organizations_service, recipients_service, donations_service
+from chalicelib import organizations_service, recipients_service, donations_service, citizens_in_needs_service, \
+    citizens_service
 
 app = Chalice(app_name='hackqc2019')
 
 
 @app.route('/', cors=True)
 def index():
-    return {'hello': 'world'}
+    return {'version': '0.0.1'}
 
 
 # RECIPIENTS
@@ -19,6 +20,10 @@ def find_recipient(reference):
     recipient = recipients_service.find_recipient(reference)
     if not recipient:
         raise NotFoundError()
+
+    uri_params = app.current_request.uri_params
+    if 'lon' in uri_params and 'lat' in uri_params:
+        print(f'location given ({uri_params.lon},{uri_params.lat})')
 
     return recipient
 
@@ -32,12 +37,20 @@ def generate_recipient_tag(reference):
 
 @app.route('/organizations', cors=True)
 def find_organizations():
-    return organizations_service.find_organizations()
+    return {
+        "organizations": organizations_service.find_organizations()
+    }
+
+
+@app.route('/organizations/me', cors=True)
+def my_organization():
+    me = "12345"
+    return organizations_service.find_organization(me)
 
 
 @app.route('/organizations/{reference}', cors=True)
 def get_organization(reference):
-    organization = organizations_service.get_organization(reference)
+    organization = organizations_service.find_organization(reference)
 
     if not organization:
         raise NotFoundError()
@@ -49,7 +62,9 @@ def get_organization(reference):
 
 @app.route('/donations', cors=True)
 def get_my_donations():
-    return []
+    return {
+        "donations": []
+    }
 
 
 @app.route('/donations', methods=['POST'], cors=True)
@@ -57,6 +72,25 @@ def send_donation():
     donation_request = app.current_request.json_body
     donation = donations_service.send_donation(donation_request)
     return donation.as_json()
+
+
+# CITIZEN
+
+@app.route('/citizens/me')
+def me():
+    me_citizen = 'C_12345'
+    return citizens_service.find(me_citizen)
+
+
+# CITIZEN IN NEEDS
+
+@app.route('/citizens/in-needs/{reference}', cors=True)
+def get_citizen_in_needs(reference):
+    citizen_in_needs = citizens_in_needs_service.find(reference)
+    if not citizen_in_needs:
+        raise NotFoundError()
+
+    return citizen_in_needs
 
 
 @app.route('/doc', cors=True)

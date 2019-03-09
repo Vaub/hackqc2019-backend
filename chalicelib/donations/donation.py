@@ -11,7 +11,6 @@ class Donation:
             from_citizen=json['from'],
             to_recipient=json['to'],
             amount=json['amount'],
-            position=json['position'],
             donated_at=datetime.datetime.now(),
         )
 
@@ -32,6 +31,5 @@ class Donation:
             "from": self.from_citizen,
             "to": self.to_recipient,
             "amount": self.amount,
-            "position": self.position,
             "donated_at": self.donated_at.isoformat()
         }

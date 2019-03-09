@@ -26,5 +26,5 @@ def find_organizations():
     return list(ORGS.values())
 
 
-def get_organization(reference):
+def find_organization(reference):
     return ORGS[reference] if reference in ORGS else None
