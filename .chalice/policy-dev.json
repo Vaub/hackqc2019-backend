@@ -20,6 +20,15 @@
       "Effect": "Allow"
     },
     {
+      "Action": [
+        "dynamodb:*"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:ca-central-1:*:table/hackqc2019*"
+      ],
+      "Effect": "Allow"
+    },
+    {
       "Effect": "Allow",
       "Action": [
         "apigateway:GET"

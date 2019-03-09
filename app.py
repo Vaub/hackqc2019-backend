@@ -1,9 +1,13 @@
 import boto3
 from chalice import Chalice, NotFoundError
 
-import chalicelib.recipients_tag_service as recipients_tag_service
-from chalicelib import organizations_service, recipients_service, donations_service, citizens_in_needs_service, \
-    citizens_service
+from chalicelib import (
+    citizens_service,
+    citizens_in_needs_service,
+    donations_service,
+    organizations_service,
+    recipients_service,
+)
 
 app = Chalice(app_name='hackqc2019')
 
@@ -30,16 +34,24 @@ def find_recipient(reference):
 
 @app.route('/recipients/{reference}/tag', cors=True)
 def generate_recipient_tag(reference):
-    return recipients_tag_service.create_tag(reference)
+    return recipients_service.create_tag(reference)
 
 
 # ORGANIZATIONS
 
 @app.route('/organizations', cors=True)
 def find_organizations():
+    organizations = organizations_service.find_organizations()
+
     return {
-        "organizations": organizations_service.find_organizations()
+        "organizations": [organization.as_json() for organization in organizations]
     }
+
+
+@app.route('/organizations', methods=['POST'], cors=True)
+def register_organization():
+    request = app.current_request.json_body
+    return organizations_service.register_organization(request).as_json()
 
 
 @app.route('/organizations/me', cors=True)
@@ -57,8 +69,14 @@ def get_organization(reference):
 
     return organization
 
+# CITIZEN
 
-# DONATIONS
+
+@app.route('/citizens/me')
+def me():
+    me_citizen = 'C_12345'
+    return citizens_service.find(me_citizen)
+
 
 @app.route('/donations', cors=True)
 def get_my_donations():
@@ -67,19 +85,11 @@ def get_my_donations():
     }
 
 
-@app.route('/donations', methods=['POST'], cors=True)
+@app.route('/citizens/me/donations', methods=['POST'], cors=True)
 def send_donation():
     donation_request = app.current_request.json_body
     donation = donations_service.send_donation(donation_request)
     return donation.as_json()
-
-
-# CITIZEN
-
-@app.route('/citizens/me')
-def me():
-    me_citizen = 'C_12345'
-    return citizens_service.find(me_citizen)
 
 
 # CITIZEN IN NEEDS

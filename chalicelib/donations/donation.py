@@ -1,6 +1,8 @@
 import datetime
 import uuid
 
+import dateutil
+
 
 class Donation:
 
@@ -14,12 +16,16 @@ class Donation:
             donated_at=datetime.datetime.now(),
         )
 
-    def __init__(self, reference, from_citizen, to_recipient, amount, position, donated_at):
+    @staticmethod
+    def from_json(json):
+        json['donated_at'] = dateutil.parser.parse(json['donated_at'])
+        return Donation(**json)
+
+    def __init__(self, reference, from_citizen, to_recipient, amount, donated_at):
         self.reference = reference
         self.from_citizen = from_citizen
         self.to_recipient = to_recipient
         self.amount = amount
-        self.position = position
         self.donated_at = donated_at
 
     def is_valid(self):
@@ -27,9 +33,6 @@ class Donation:
 
     def as_json(self):
         return {
-            "reference": self.reference,
-            "from": self.from_citizen,
-            "to": self.to_recipient,
-            "amount": self.amount,
+            **self.__dict__,
             "donated_at": self.donated_at.isoformat()
         }

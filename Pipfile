@@ -6,6 +6,9 @@ name = "pypi"
 [packages]
 chalice = "*"
 qrcode = "*"
+geojson = "*"
+shapely = "*"
+python-dateutil = "*"
 
 [dev-packages]
 awscli = "*"
