@@ -50,7 +50,7 @@ class DonationsDynamoDBRepository:
             )
         if recipient:
             query = self._table.query(
-                IndexName='from_citizen-donation-index',
+                IndexName='to_recipient-donation-index',
                 KeyConditionExpression=Key('to_recipient').eq(recipient)
             )
 

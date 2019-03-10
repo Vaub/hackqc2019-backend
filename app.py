@@ -59,12 +59,27 @@ def my_organization():
     return organizations_service.find_organization(ME_ORGANIZATION)
 
 
-@app.route('/organizations/me/redeem', cors=True)
+@app.route('/organizations/me/transactions', cors=True)
+def get_organization_transactions():
+    transactions = organizations_service.list_transactions(ME_ORGANIZATION)
+    return {
+        "transactions": [transaction.as_json() for transaction in transactions]
+    }
+
+
+@app.route('/organizations/me/donations', cors=True)
+def get_organization_donations():
+    donations = donations_service.find_for_recipient(ME_ORGANIZATION)
+    return {
+        "donations": [donation.as_json() for donation in donations]
+    }
+
+@app.route('/organizations/me/redeem', methods=['POST'], cors=True)
 def redeem():
     request = app.current_request.json_body
 
     request['to_organization'] = ME_ORGANIZATION
-    return citizens_in_needs_service.redeem(request)
+    return citizens_in_needs_service.redeem(request).as_json()
 
 
 @app.route('/organizations/{reference}', cors=True)
