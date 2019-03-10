@@ -1,6 +1,7 @@
 {
   "version": "2.0",
   "app_name": "hackqc2019",
+  "lambda_memory_size": 256,
   "stages": {
     "dev": {
       "autogen_policy": false,

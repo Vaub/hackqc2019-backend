@@ -56,7 +56,7 @@ def register_organization():
 
 @app.route('/organizations/me', cors=True)
 def my_organization():
-    return organizations_service.find_organization(ME_ORGANIZATION)
+    return organizations_service.find_organization(ME_ORGANIZATION).as_json()
 
 
 @app.route('/organizations/me/transactions', cors=True)
@@ -73,6 +73,7 @@ def get_organization_donations():
     return {
         "donations": [donation.as_json() for donation in donations]
     }
+
 
 @app.route('/organizations/me/redeem', methods=['POST'], cors=True)
 def redeem():
@@ -144,11 +145,14 @@ def get_citizen_in_needs(reference):
 @app.route('/statistics', cors=True)
 def get_neighborhoods_statistics():
     params = app.current_request.query_params
+
+    city = params['city'] if params and 'city' in params else 'quebec'
+
     if params and 'neighborhood' in params:
-        statistics= statistics_service.find_neighborhood_stats(neighborhood=params['neighborhood'])
+        statistics= statistics_service.find_neighborhoods_stats(city=city, city_neighborhood=params['neighborhood'])
         return _serialize_neighborhood_statistics(statistics)
 
-    statistics = statistics_service.find_neighborhoods_stats()
+    statistics = statistics_service.find_neighborhoods_stats(city=city)
     return [_serialize_neighborhood_statistics(s) for s in statistics]
 
 
