@@ -67,9 +67,25 @@ def get_organization_transactions():
     }
 
 
+@app.route('/organizations/{reference}/transactions', cors=True)
+def get_organization_transactions(reference):
+    transactions = organizations_service.list_transactions(reference)
+    return {
+        "transactions": [transaction.as_json() for transaction in transactions]
+    }
+
+
 @app.route('/organizations/me/donations', cors=True)
 def get_organization_donations():
     donations = donations_service.find_for_recipient(ME_ORGANIZATION)
+    return {
+        "donations": [donation.as_json() for donation in donations]
+    }
+
+
+@app.route('/organizations/{reference}/donations', cors=True)
+def get_organization_donations(reference):
+    donations = donations_service.find_for_recipient(reference)
     return {
         "donations": [donation.as_json() for donation in donations]
     }
